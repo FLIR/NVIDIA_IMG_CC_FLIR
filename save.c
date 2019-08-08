@@ -183,7 +183,9 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
 
         /* @@@@ ----------------- BOSON ONLY ------------------ */
         /* @@@@ Adjust this to Boson RAW14 format */
-        if (config.bitsPerPixel == NVMEDIA_BITS_PER_PIXEL_14) {
+        if ((srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_14) && 
+            (srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_INT))
+        {
             dstHeight = srcHeight  ;  // Boson is 257 or 513
             dstWidth  = srcWidth   ;  // Boson is 320 or 640  and will be 4 bytes per pixel
             dstPitch  = dstWidth  * 4  ;
@@ -260,7 +262,8 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
         }
     }
     /* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
-    else if (config.bitsPerPixel == NVMEDIA_BITS_PER_PIXEL_14) {
+    else if ((srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_14) && 
+            (srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_INT)) {
     
         // reverse and order bits
   
