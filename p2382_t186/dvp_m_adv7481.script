@@ -1,0 +1,116 @@
+#
+#  Copyright (c) 2017, NVIDIA CORPORATION.  All rights reserved.
+#
+#  NVIDIA Corporation and its licensors retain all intellectual property
+#  and proprietary rights in and to this software and related documentation
+#  and any modifications thereto.  Any use, reproduction, disclosure or
+#  distribution of this software and related documentation without an express
+#  license agreement from NVIDIA Corporation is strictly prohibited.
+#
+# Capture Config Parameters
+; Interface: csi-ef
+; Input Format: rgb
+; Resolution: 1920x1080
+; CSI Lanes: 4
+; I2C Device: 2
+; Sensor Address: 0xE2
+
+; Begin preset registers
+# SW reset adv7481
+E2 FF FF
+; Delay 5ms
+# Board init settings start here
+E2 01 76
+E2 05 81
+E2 F2 01
+E2 F3 4c
+E2 F4 44
+E2 F5 68
+E2 F6 6c
+E2 F7 64
+E2 F8 62
+E2 F9 F0
+E2 FA 82
+E2 FB F2
+E2 FC 90
+E2 FD 94
+E2 00 40
+64 40 83
+68 00 08
+68 98 FF
+68 99 A3
+68 9A 00
+68 9B 0A
+68 9D 40
+68 CB 09
+68 3D 10
+68 3E 7B
+68 3F 5E
+68 4E FE
+68 4F 18
+68 57 A3
+68 58 04
+68 85 10
+68 83 00
+68 A3 01
+68 BE 00
+68 6C 01
+68 F8 01
+68 0F 00
+F2 0F 00
+F2 52 CD
+F2 00 00
+F2 0E 80
+F2 9C 00
+F2 9C FF
+F2 0E 00
+F2 80 51
+F2 81 51
+F2 82 68
+F2 03 42
+F2 04 07
+F2 13 00
+F2 17 41
+F2 31 12
+E2 04 00
+E2 12 F2
+E2 17 80
+E2 03 86
+44 7C 00
+E2 0C E0
+E2 0E DD
+E2 10 A0
+94 00 84
+94 00 A4
+94 DB 10
+94 D6 07
+94 C4 0A
+94 71 33
+94 72 11
+94 F0 00
+94 31 82
+94 1E 40
+94 DA 03
+; Delay 2ms
+; End preset registers
+# Board init setting end here
+# Configure adv7481 chip to recieve HDMI
+# 1920x1080p resolution, rgb format, 4 lane CSI
+E2 05 5E
+E2 12 F0
+E2 04 02
+E2 10 A0
+94 00 A4
+# Wait sometime for pll locking
+; Delay 1000ms
+44 8B 43
+44 8C D4
+44 8B 4F
+44 8D D4
+# start streaming
+94 00 24
+; Delay 5ms
+94 C1 2B
+; Delay 5ms
+94 31 80
+; Delay 500ms
