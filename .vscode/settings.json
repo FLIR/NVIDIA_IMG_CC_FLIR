@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "capture.h": "c",
+        "main.h": "c",
+        "cmdline.h": "c",
+        "sensor_info.h": "c",
+        "nvmedia_surface.h": "c",
+        "i2ccommands.h": "c"
+    }
+}

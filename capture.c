@@ -421,17 +421,23 @@ _SetICPSettings(CaptureThreadCtx *ctx,
         ctx->pixelOrder =  captureParams->pixelOrder.uIntValue;
     /* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
     } else if (!strcasecmp(inputFormat, "raw14")) {
-        ctx->inputFormat.inputFormatType = NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_RAW;
-        ctx->inputFormat.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;   // @@@@ Boson is 14 bits
-        ctx->inputFormat.pixelOrder = captureParams->pixelOrder.uIntValue;
-        ctx->surfFormat.surfaceFormatType = NVMEDIA_IMAGE_CAPTURE_SURFACE_FORMAT_TYPE_RAW;
-        ctx->surfFormat.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;    // @@@@ Boson is 14 bits
-        ctx->surfFormat.pixelOrder = captureParams->pixelOrder.uIntValue;
-        ctx->surfType = NvMediaSurfaceType_Image_RAW;
-        ctx->surfAttributes |= NVMEDIA_IMAGE_ATTRIBUTE_BITS_PER_PIXEL;
-        ctx->surfAttributes |= NVMEDIA_IMAGE_ATTRIBUTE_RAW_PIXEL_ORDER;
-        ctx->surfAdvConfig.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;    // @@@@ Boson is 14 bits
-        ctx->surfAdvConfig.pixelOrder = captureParams->pixelOrder.uIntValue;
+        ctx->inputFormat.inputFormatType = NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_RAW14;
+
+        NVM_SURF_FMT_SET_ATTR_RAW(surfFormatAttrs,RGGB,UINT,14,PL);
+        surfFormatAttrs[NVM_SURF_ATTR_COMPONENT_ORDER].value +=  captureParams->pixelOrder.uIntValue;
+
+
+        // ctx->inputFormat.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;   // @@@@ Boson is 14 bits
+        // ctx->pixelOrder = captureParams->pixelOrder.uIntValue;
+        // ctx->surfFormat.surfaceFormatType = NVMEDIA_IMAGE_CAPTURE_SURFACE_FORMAT_TYPE_RAW;
+        // ctx->surfFormat.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;    // @@@@ Boson is 14 bits
+        // ctx->surfFormat.pixelOrder = captureParams->pixelOrder.uIntValue;
+        // ctx->surfType = NvMediaSurfaceType_Image_RAW;
+        // ctx->surfAttributes |= NVMEDIA_IMAGE_ATTRIBUTE_BITS_PER_PIXEL;
+        // ctx->surfAttributes |= NVMEDIA_IMAGE_ATTRIBUTE_RAW_PIXEL_ORDER;
+        // ctx->surfAdvConfig.bitsPerPixel = NVMEDIA_BITS_PER_PIXEL_14;    // @@@@ Boson is 14 bits
+        // ctx->surfAdvConfig.pixelOrder = captureParams->pixelOrder.uIntValue;
+
     /* @@@@ END -------------- FLIR BOSON ONLY ------------------ */
     } else if (!strcasecmp(inputFormat, "raw20")) {
         ctx->inputFormat.inputFormatType = NVMEDIA_IMAGE_CAPTURE_INPUT_FORMAT_TYPE_RAW20;
