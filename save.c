@@ -41,6 +41,33 @@ enum PixelColor {
     NUM_PIXEL_COLORS
 };
 
+/* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
+
+// We are  reordering the bits
+// Boson Data: x.x.N4.N4:N3.N3.N3.N3 - N2.N2.N2.N2:N1.N1.N1.N1
+// byteH -> N2.N2.N3.N3:N3.N3.N4.N4  (has the most significant bits)
+// byteL -> x.x.N1.N1:N1.N1.N2.N2  (has the less significant bits)
+short int reverse_16bits(unsigned char byteH, unsigned char byteL) {
+    short int valor;
+    int x=0;
+
+    valor = 0;
+
+    for (x=0; x<8; x++) {
+        valor   = ( valor << 1) + ( byteH & 0x01 ) ;
+        byteH = ( byteH >> 1) ;
+    }
+    for (x=0; x<6; x++) {
+        valor   = ( valor << 1) + ( byteL & 0x01 ) ;
+        byteL = ( byteL >> 1) ;
+    }
+
+    return valor;
+
+}
+/* @@@@ END -------------- FLIR BOSON ONLY ------------------ */
+
+
 static NvMediaStatus
 _ConvGetPixelOffsets(NvMediaRawPixelOrder pixelOrder,
                      uint32_t *xOffsets,
@@ -87,6 +114,16 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
     uint8_t alpha = 0xFF;
     uint32_t x = 0, y = 0;
     uint32_t xOffsets[NUM_PIXEL_COLORS] = {0}, yOffsets[NUM_PIXEL_COLORS] = {0};
+
+    /* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
+    /* @@@@ Auxiliary vars to re-order bits and perform simple AGC */
+    unsigned short value;
+    int min=0xFFFF;
+    int max=0;
+    unsigned char tmpH, tmpL;
+    /* @@@@ END -------------- FLIR BOSON ONLY ------------------ */
+    
+
     NVM_SURF_FMT_DEFINE_ATTR(srcAttr);
     NVM_SURF_FMT_DEFINE_ATTR(dstAttr);
 
@@ -143,6 +180,19 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
     if (dstAttr[NVM_SURF_ATTR_SURF_TYPE].value == NVM_SURF_ATTR_SURF_TYPE_RGBA) {
         dstPitch = dstWidth * 4;
         dstImageSize = dstHeight * dstPitch;
+
+        /* @@@@ ----------------- BOSON ONLY ------------------ */
+        /* @@@@ Adjust this to Boson RAW14 format */
+        if (config.bitsPerPixel == NVMEDIA_BITS_PER_PIXEL_14) {
+            dstHeight = srcHeight  ;  // Boson is 257 or 513
+            dstWidth  = srcWidth   ;  // Boson is 320 or 640  and will be 4 bytes per pixel
+            dstPitch  = dstWidth  * 4  ;
+            dstImageSize = dstHeight * dstPitch ;
+            //printf("sH:%i, sW:%i, sP:%i, sS:%i\n", srcHeight, srcWidth ,srcPitch, srcImageSize );
+            //printf("dH:%i, dW:%i, dP:%i, dS:%i\n", dstHeight, dstWidth ,dstPitch, dstImageSize );
+        }
+        /* @@@@ END -------------- BOSON ONLY ------------------ */
+
     } else {
         LOG_ERR("%s: Unsupported destination surface type\n", __func__);
         status = NVMEDIA_STATUS_ERROR;
@@ -208,6 +258,70 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
                 pTmp++;
             }
         }
+    }
+    /* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
+    else if (config.bitsPerPixel == NVMEDIA_BITS_PER_PIXEL_14) {
+    
+        // reverse and order bits
+  
+        // Boson Data: x.x.N4.N4:N3.N3.N3.N3 - N2.N2.N2.N2:N1.N1.N1.N1
+        // At reception:
+        // byteH ( Buff[ n   ] ) -> N2.N2.N3.N3:N3.N3.N4.N4  (has the most significant bits)
+        // byteL ( Buff[ n+1 ] ) -> x.x.N1.N1:N1.N1.N2.N2  (has the less significant bits)
+  
+        // Very important to discard first line which is TELEMETRY !!!
+        // We will re-order bits, but not taking into account for AGC
+        for (y=0; y< srcWidth; y++) {
+            // short int reverse_16bits(unsigned char byteH, unsigned char byteL) {
+            value = reverse_16bits( pSrcBuff[ y*2  ], pSrcBuff[ y*2 + 1 ] ) ;
+      
+            // Write back the reversed bytes and swap (LSB / MSB )
+            // Store reversed order
+            tmpL= value & 0xFF;
+            tmpH= (value & 0xFF00) >> 8;
+      
+            pSrcBuff[ y*2 ]     = tmpH;
+            pSrcBuff[ y*2 + 1 ] = tmpL;
+        }
+  
+        // We continue with the rest of the IMAGE.
+        // We need to order first, and we will perform a basic AGC after
+        for (y=srcWidth; y< srcHeight*srcWidth; y++) {
+            // short int reverse_16bits(unsigned char byteH, unsigned char byteL) {
+            value = reverse_16bits( pSrcBuff[ y*2  ], pSrcBuff[ y*2 + 1 ] ) ;
+          
+            // Write back the reversed bytes and swap (LSB / MSB )
+            // Store reversed order
+            tmpL= value & 0xFF;
+            tmpH= (value & 0xFF00) >> 8;
+              
+            pSrcBuff[ y*2 ]     = tmpH;
+            pSrcBuff[ y*2 + 1 ] = tmpL;
+              
+            // find max, min of the pixels.
+            // We will use this information to run a Linear AGC.
+            // If a different AGC you can delete these lines.
+            if ( value <= min ) {
+                min=value;
+            }
+            if ( value >= max ) {
+                max=value;
+            }
+        
+        }
+          
+        // Do AGC in LUMA
+        for (y=srcWidth; y<srcWidth * srcHeight; y++) {
+            value =  ( (pSrcBuff[y*2]<<8) + pSrcBuff[y*2 + 1]) & 0xFFFF  ;
+            value = ( ( ( 255 * ( value - min ) ) ) / (max-min) ) & 0xFF   ;
+                    
+            pDstBuff[ y * 4     ] = value;  //R
+            pDstBuff[ y * 4 + 1 ] = value;  //G
+            pDstBuff[ y * 4 + 2 ] = value;  //B
+            pDstBuff[ y * 4 + 3 ] = alpha;
+        }
+    // @@@@ END----------------- FLIR BOSON ONLY ------------------
+
     } else {
         LOG_ERR("%s: Unsupported input raw format\n", __func__);
         status = NVMEDIA_STATUS_ERROR;
