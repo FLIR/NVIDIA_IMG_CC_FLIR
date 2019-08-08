@@ -609,10 +609,17 @@ _CaptureThreadFunc(void *data)
                 LOG_WARN("%s: NvMediaICPGetFrameEx timed out\n", __func__);
                 if (++retry > CAPTURE_MAX_RETRY) {
                     LOG_ERR("%s: keep failing at NvMediaICPGetFrameEx for %d times\n", __func__, retry);
+                    /* @@@@ ----------------- FLIR BOSON ONLY ------------------ */
+                    // This needs to be addresed. Main issue is that Surface is a quarter of the image.
+                    // This could be causing these errors? Requires further investigation. Capturing and not Displaying works.
+    
                     /* Stop ICP to release all the buffer fed so far */
-                    NvMediaICPStop(icpInst);
-                    *threadCtx->quit = NVMEDIA_TRUE;
-                    goto done;
+                    //@@@@ NvMediaICPStop(icpInst);
+                    //@@@@ *threadCtx->quit = NVMEDIA_TRUE;
+                    //@@@@ goto done;
+
+                    /* @@@@ END -------------- FLIR BOSON ONLY ------------------ */
+                    retry=0;
                 }
                 continue;
             case NVMEDIA_STATUS_INSUFFICIENT_BUFFERING:
