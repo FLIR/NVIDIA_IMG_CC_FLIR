@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "/usr/include",
                 "/usr/local/include",
-                "/home/flir/nvidia/nvidia_sdk/DRIVE_Software_9.0_Linux_hyperion_E3550/DriveSDK/drive-t186ref-linux/include",
+                "${workspaceFolder}/../../../include",
                 "${workspaceFolder}/../utils/"
             ],
             "defines": [],

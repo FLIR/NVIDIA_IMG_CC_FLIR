@@ -243,7 +243,8 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
                 (srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_12) ||
                 (srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_16)) &&
                (srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_UINT)) {
-        for (; y < srcHeight; y += 2) {
+        // ANIL EDIT: start from 1st row (skip telemetry line)
+        for (y = 1; y < srcHeight; y += 2) {
             for (x = 0; x < srcWidth; x += 2) {
                 /* R */
                 *pTmp = CONV_CALCULATE_PIXEL_UINT(pSrcBuff, srcPitch, x, y, xOffsets[RED], yOffsets[RED]);
