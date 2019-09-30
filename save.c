@@ -65,6 +65,18 @@ short int reverse_16bits(unsigned char byteH, unsigned char byteL) {
     return valor;
 
 }
+
+void write_raw_to_file(uint8_t *data, int stride, int height, 
+    char *filename)
+{
+    FILE *f = fopen(filename, "w+");
+    fwrite(data, sizeof(uint8_t), stride * height, f);
+}
+
+uint8_t raw12_to_byte(uint8_t *data, int idx) {
+    uint16_t pixel = (data[idx + 1] << 8) + data[idx];
+    return (pixel >> 4) & 0xFF;
+}
 /* @@@@ END -------------- FLIR BOSON ONLY ------------------ */
 
 
@@ -174,27 +186,13 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
         goto done;
     }
 
-    dstHeight = srcHeight / 2;
-    dstWidth  = srcWidth / 2;
+    // set height skip telemetry line
+    dstHeight = srcHeight - 1;
+    dstWidth  = srcWidth;
 
     if (dstAttr[NVM_SURF_ATTR_SURF_TYPE].value == NVM_SURF_ATTR_SURF_TYPE_RGBA) {
-        dstPitch = dstWidth * 4;
+        dstPitch = dstWidth;
         dstImageSize = dstHeight * dstPitch;
-
-        /* @@@@ ----------------- BOSON ONLY ------------------ */
-        /* @@@@ Adjust this to Boson RAW14 format */
-        if ((srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_14) && 
-            (srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_INT))
-        {
-            dstHeight = srcHeight  ;  // Boson is 257 or 513
-            dstWidth  = srcWidth   ;  // Boson is 320 or 640  and will be 4 bytes per pixel
-            dstPitch  = dstWidth  * 4  ;
-            dstImageSize = dstHeight * dstPitch ;
-            //printf("sH:%i, sW:%i, sP:%i, sS:%i\n", srcHeight, srcWidth ,srcPitch, srcImageSize );
-            //printf("dH:%i, dW:%i, dP:%i, dS:%i\n", dstHeight, dstWidth ,dstPitch, dstImageSize );
-        }
-        /* @@@@ END -------------- BOSON ONLY ------------------ */
-
     } else {
         LOG_ERR("%s: Unsupported destination surface type\n", __func__);
         status = NVMEDIA_STATUS_ERROR;
@@ -208,7 +206,7 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
     }
 
     pTmp = pDstBuff;
-    /* Convert to rgba */
+    /* Convert to grayscale */
 
     /* Y is starting at valid pixel, skipping embedded lines from top */
     y = imgSrc->embeddedDataTopSize / srcPitch;
@@ -239,25 +237,29 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
                 pTmp++;
             }
         }
-    } else if (((srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_10) ||
+    }
+    // @@@@ ------------------ 12 Bit grayscale ----------------- 
+    else if (((srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_10) ||
                 (srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_12) ||
                 (srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_16)) &&
                (srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_UINT)) {
+        
         // ANIL EDIT: start from 1st row (skip telemetry line)
-        for (y = 1; y < srcHeight; y += 2) {
-            for (x = 0; x < srcWidth; x += 2) {
-                /* R */
-                *pTmp = CONV_CALCULATE_PIXEL_UINT(pSrcBuff, srcPitch, x, y, xOffsets[RED], yOffsets[RED]);
+        for (y = 1; y < srcHeight; y++) {
+            for (x = 0; x < srcPitch; x += 2) {
+                *pTmp = raw12_to_byte(pSrcBuff, y * srcPitch + x);
                 pTmp++;
-                /* G (average of green in BGGR) */
-                *pTmp = ((CONV_CALCULATE_PIXEL_UINT(pSrcBuff, srcPitch, x, y, xOffsets[GREEN1], yOffsets[GREEN1])) +
-                         (CONV_CALCULATE_PIXEL_UINT(pSrcBuff, srcPitch, x, y, xOffsets[GREEN2], yOffsets[GREEN2]))) /2 ;
-                pTmp++;
-                /* B */
-                *pTmp = CONV_CALCULATE_PIXEL_UINT(pSrcBuff, srcPitch, x, y, xOffsets[BLUE], yOffsets[BLUE]);
-                pTmp++;
-                /* A */
-                *pTmp = alpha;
+            }
+        }
+    }
+    // @@@@ ------------ 8 bit grayscale -----------------
+    else if (srcAttr[NVM_SURF_ATTR_BITS_PER_COMPONENT].value == NVM_SURF_ATTR_BITS_PER_COMPONENT_8 &&
+               srcAttr[NVM_SURF_ATTR_DATA_TYPE].value == NVM_SURF_ATTR_DATA_TYPE_UINT) {
+        
+        // ANIL EDIT: start from 1st row (skip telemetry line)
+        for (y = 1; y < srcHeight; y++) {
+            for (x = 0; x < srcWidth; x++) {
+                *pTmp = pSrcBuff[y * srcPitch + x];
                 pTmp++;
             }
         }
@@ -346,6 +348,8 @@ _ConvRawToRgba(NvMediaImage *imgSrc,
         LOG_ERR("%s: NvMediaImagePutBits() failed\n", __func__);
         goto done;
     }
+
+    // write_raw_to_file(pDstBuff, dstWidth, dstHeight, "rawOut.raw");
 
     status = NVMEDIA_STATUS_OK;
 done:
