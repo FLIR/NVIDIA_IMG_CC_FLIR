@@ -20,6 +20,7 @@
 
 /* Quit flag. Out of context structure for sig handling */
 static volatile NvMediaBool *quit_flag;
+static char *cmd_listener;
 
 static void
 SigHandler(int signum)
@@ -73,6 +74,8 @@ ExecuteNextCommand(NvMainContext *ctx) {
     if (!strcasecmp(input, "q") || !strcasecmp(input, "quit")) {
         *quit_flag = NVMEDIA_TRUE;
         return 0;
+    } else if(input[0] != '\0') {
+        sprintf(cmd_listener, input);
     }
 
     return 0;
@@ -112,6 +115,9 @@ int main(int argc,
     memset(&allArgs, 0, sizeof(TestArgs));
     memset(&mainCtx, 0 , sizeof(NvMainContext));
 
+    mainCtx.cmd = malloc(256);
+    strcpy(mainCtx.cmd, "");
+    
     if (CheckModulesVersion() != NVMEDIA_STATUS_OK) {
         return -1;
     }
@@ -121,6 +127,7 @@ int main(int argc,
     }
 
     quit_flag = &mainCtx.quit;
+    cmd_listener = mainCtx.cmd;
     SigSetup();
 
     /* Initialize context */

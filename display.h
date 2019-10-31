@@ -32,6 +32,7 @@ typedef struct {
     NvMediaDevice              *device;
     volatile NvMediaBool       *quit;
     NvThread                   *displayThread;
+    char                       *cmd;
 
     /* Display related params */
     NvMediaBool                 exitedFlag;

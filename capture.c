@@ -9,8 +9,7 @@
 /* NVIDIA CORPORATION gave permission to FLIR Systems, Inc to modify this code
   * and distribute it as part of the ADAS GMSL Kit.
   * http://www.flir.com/
-  * This file includes some FLIR changes noted as @@@@
-  * June-2017
+  * October-2019
 */
 
 #include "capture.h"

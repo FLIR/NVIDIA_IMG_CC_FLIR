@@ -6,11 +6,47 @@
  * distribution of this software and related documentation without an express
  * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
+/* NVIDIA CORPORATION gave permission to FLIR Systems, Inc to modify this code
+  * and distribute it as part of the ADAS GMSL Kit.
+  * http://www.flir.com/
+  * October-2019
+*/
 
 #include <limits.h>
 #include <math.h>
 
+#include "testutil_i2c.h"
 #include "display.h"
+
+static void
+_SendFFC() {
+    I2cHandle handle = NULL;
+    // hard code i2c device and sensor address for now
+    int i2cDevice = 0;
+    int i = 0;
+    int sensorAddress = 0xD8 / 2;
+
+    testutil_i2c_open(i2cDevice, &handle);
+
+    uint16_t cmd[19] = {0x0902, 0x8E, 0x00, 0x12, 0xC0, 0xFF, 0xEE, 0x00, 0x05, 
+        0x00, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0x6C, 0x5E, 0xAE, 0x0900};
+
+    for (i = 0; i < 19; i++) {
+        uint8_t instruction[2] = {cmd[i] >> 8, cmd[i] & 0xFF};
+
+        if(testutil_i2c_write_subaddr(handle, sensorAddress, 
+            &instruction, 2)) 
+        {
+            LOG_ERR("%s: Failed to write to I2C %02x %02x %02x",
+                __func__, sensorAddress,
+                instruction[0],
+                instruction[1]);
+            break;
+        }
+    }
+
+    testutil_i2c_close(handle);
+}
 
 static uint32_t
 _DisplayThreadFunc(void* data)
@@ -29,6 +65,15 @@ _DisplayThreadFunc(void* data)
             LOG_DBG("%s: Display input queue empty\n", __func__);
             if (*displayCtx->quit)
                 goto loop_done;
+        }
+
+        // check for ffc command
+        if(displayCtx->cmd[0] != '\0') {
+            if(!strcasecmp(displayCtx->cmd, "f")) {
+                _SendFFC();
+            }
+
+            sprintf(displayCtx->cmd, "");
         }
 
         /* Display to screen */
@@ -106,6 +151,8 @@ DisplayInit(NvMainContext *mainCtx)
     displayCtx->displayEnabled = testArgs->displayEnabled;
     displayCtx->positionSpecifiedFlag = testArgs->positionSpecifiedFlag;
     displayCtx->exitedFlag = NVMEDIA_TRUE;
+    displayCtx->cmd = mainCtx->cmd;
+
     isDisplayIdProvided = testArgs->displayIdUsed;
     displayId = testArgs->displayId;
     windowId = testArgs->windowId;

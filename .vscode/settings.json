@@ -5,6 +5,7 @@
         "cmdline.h": "c",
         "sensor_info.h": "c",
         "nvmedia_surface.h": "c",
-        "i2ccommands.h": "c"
+        "i2ccommands.h": "c",
+        "display.h": "c"
     }
 }

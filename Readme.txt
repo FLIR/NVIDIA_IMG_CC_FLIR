@@ -1,9 +1,9 @@
 /* ------------------------------------------------------------------------- */
 /* FLIR Systems, Inc                                             June 2017   */
 /* ------------------------------------------------------------------------- */
-/* NVMIMG_CC application tuned by FLIR to demonstrate ADK GMSL kit for PX2   */
+/* NVMIMG_CC application tuned by FLIR to demonstrate ADK GMSL kit for AGX   */
 /* This code was based on the NVDIA VibranteSDK version 4.1.4.0  (Mar2017)   */
-/* provided by NVIDIA corporation as part of the PX2 development kit.        */
+/* provided by NVIDIA corporation as part of the AGX development kit.        */
 /* It uses NvMedia framework to capture and display the video                */
 /*                                                                           */
 /* It works for ADK_Boson320 and ADK_Boson640. capturing, displaying and     */
@@ -39,30 +39,19 @@
    make clean
    make
 
-6. copy img_cc_flir file into PX2
-   cp boson/boson320.script into PX2
+6. copy nvmedia_cc file into AGX
+   cp boson/boson640.script into AGX
 
-7. Run the application in the PX2
-   - It assumes that ADK kit is connected to port A0 on PX2
-   - ./nvmimg_cc_flir -wrregs boson320.script
+7. Run the application in the AGX
+   - It assumes that ADK kit is connected to port A0 on AGX
+   - ./nvmimg_cc_flir -wrregs boson640.script
       (if it works you will see the capture '/,-.\,|' icon moving )
 
-   - ./nvmimg_cc_flir -wrregs boson320.script -d 0 -w 1 -p 10:10:320:257
+   - ./nvmimg_cc_flir -wrregs boson640.script -d 0 -w 1 -p 10:10:320:257
        ( does the same plus displays the video (*) )
 
-   - ./nvmimg_cc_flir -wrregs boson320.script -d 0 -w 1 -p 10:10:320:257 -f filename - n X   ( X = number of frames to capture )
+   - ./nvmimg_cc_flir -wrregs boson640.script -d 0 -w 1 -p 10:10:320:257 -f filename - n X   ( X = number of frames to capture )
 	     FLIR includes the tool 'displayRaw' to display the captured image.
-
-(*) Due to a misalignment between Nvidia default visible cameras and our 14bits
-    data, the image displayed is a quarter of original. It is shown the Top/Left
-    quarter
-
-			   320
-		....................
-		.  Shown  . Hidden .
-	257	....................
-		.  Hidden . Hidden .
-		....................
 
 8. Modifications done by FLIR
    capture.c :
@@ -71,7 +60,13 @@
 
    save.c :
 	- Re-ordering of bits
-	- Linear AGC
+
+   display.c :
+    - Checks for ffc command
+
+9. Added functionality:
+    - Trigger FFC by entering 'f' in terminal followed by 'enter' 
+        while the video is streaming
 
 (**) Due to the misalignment of surfaces the video is dropping some frames, what
      causes an error. After 11 errors , NVIDIA quits the application, FLIR case

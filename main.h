@@ -27,6 +27,8 @@ typedef struct {
     void                        *ctxs[MAX_NUM_ELEMENTS];
     TestArgs                    *testArgs;
     volatile NvMediaBool         quit;
+    char                        *cmd;
+
 } NvMainContext;
 
 #endif
