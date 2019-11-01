@@ -59,3 +59,6 @@ On the TARGET machine:
 9. Added functionality:
     - Trigger FFC by entering 'f' in terminal followed by 'enter' 
         while the video is streaming
+
+## Going Forward
+If you are looking for an OpenCV alternative, please contact Andres Prieto-Moreno (andres.prieto-moreno@flir.com) for access to the Nvidia OpenCV project.
