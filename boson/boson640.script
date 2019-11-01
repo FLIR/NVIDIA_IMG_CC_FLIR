@@ -1,0 +1,117 @@
+#
+#  Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+#
+#  NVIDIA Corporation and its licensors retain all intellectual property
+#  and proprietary rights in and to this software and related documentation
+#  and any modifications thereto.  Any use, reproduction, disclosure or
+#  distribution of this software and related documentation without an express
+#  license agreement from NVIDIA Corporation is strictly prohibited.
+#
+# Max9286 Address: 0x90  # in 8-bit format (0x48 in 7-bit) DESERIALIZAER
+# Capture Config Parameters
+; Interface: csi-ab
+; Input Format: raw8    # Boson is 14 bits (encapsulated in 16bits) 
+; Resolution: 640x513    # If Telemetry line is OFF then 640x512.  
+; CSI Lanes: 4           # If CSI Lanes = 1 wont work
+; I2C Device: 0          # 1 csi-ef,2 csi-cd,7 csi-ab
+; Sensor Address: 0xD8   # this is the Boson address (in this case doesn't apply...)
+
+# Wait for Serializer to power up
+; Delay 1000ms
+# If Boson is ENABLED on BOOT then wait 1 more seconds for shutter
+; Delay 1000ms
+
+
+52 0006 F1  # Enable links - bit 0 : link 0, bit 1 : link 1, bit 2 : link 2, bit 3 : link3
+
+52 0010 22  # Set PHYA and PHYB to 6 Gbps
+52 0011 22  # Set PHYC and PHYD to 6 Gbps
+
+# Serializar: Enable configuiration 
+84 0007 F7  # Boson : Stop Serializer , enable configuration
+; Delay 5ms
+
+84 0001 04
+
+84 0287 1A
+84 0100 64
+; Delay 5ms
+
+
+52 0010 11  # Set PHYA and PHYB to 3 Gbps
+52 0011 11  # Set PHYC and PHYD to 3 Gbps
+
+52 08A0 24  # Force PHY0 MIPI clock enabled
+52 08A2 F4  # Enable MIPI on all PHY channels and 106.7ns DPHY timing
+#DPHY 4 lanes
+52 090A C0 # PHY C
+52 094A C0 # PHY D
+52 098A C0 # PHY E
+52 09CA C0 # PHY F
+# CPHY 4 trios
+52 08A3 E4  # PHY1: Map D1 to D3, D0 to D1. PHY0: D1 to D1
+52 08A4 E4  # Same for PHY3 and 2
+
+# Disable MIPI PHY software override for frequency fine tuning
+# Set 2500MHz DPLL, 2.5 Gbps/lane
+52 0415 79
+52 0418 39
+52 041B 39
+52 041E 39
+
+# RAW12 software override for all pipes since connected GMSL1 is under parallel mode
+#52 040B 62
+#52 040C 00
+#52 040D 00
+#52 040E 2C
+#52 090D 2C
+#52 090E 2C
+
+# RAW8 software override for all pipes since connected GMSL1 is under parallel mode
+52 040B 42
+52 040C 00
+52 040D 00
+52 040E 2A
+52 090D 2A
+52 090E 2A
+
+
+52 090B 07
+52 092D 15 # CSI2 controller 1
+52 090F 00
+52 0910 00
+52 0911 01
+52 0912 01
+
+# this change made frames appear (still have some C errors)
+52 00F0 60  # Assign GMSL2 PHY-A to virtual pipe X
+
+D8 0A 01
+D8 0A 00
+D8 1B 20
+D8 0B 03
+; Delay 5ms
+
+D8 09 02
+D8 00 8E
+D8 00 00
+D8 00 12
+D8 00 C0
+D8 00 FF
+D8 00 EE
+D8 00 00
+D8 00 06 
+D8 00 00
+D8 00 0F
+D8 00 FF
+D8 00 FF
+D8 00 FF
+D8 00 FF
+D8 00 00
+D8 00 00
+D8 00 00
+D8 00 01
+D8 00 12
+D8 00 0B
+D8 00 AE
+D8 09 00

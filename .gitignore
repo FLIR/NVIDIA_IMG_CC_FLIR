@@ -1,7 +1,6 @@
 *.o
 nvmimg_cc
 bali/
-boson/
 e2379_c00
 e2379_c01
 p2382_a01
